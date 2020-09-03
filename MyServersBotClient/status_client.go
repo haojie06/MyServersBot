@@ -18,7 +18,7 @@ func main() {
 	//持续发送数据包
 	//JSON的形式传递当前系统信息
 	for {
-		mData, err := json.MarshalIndent(Server{ServerName: "Test", ServerIP: "127.0.0.1", ServerOnline: true}, "", " ")
+		mData, err := json.MarshalIndent(Server{ServerName: "test", ServerIP: "127.0.0.1", ServerOnline: true}, "", " ")
 		if err != nil {
 			log.Panic(err.Error())
 		}
