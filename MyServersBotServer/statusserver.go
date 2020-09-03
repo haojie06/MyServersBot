@@ -1,16 +1,13 @@
 package main
 
 import (
-	"encoding/binary"
-	"fmt"
 	"log"
 	"net"
-	"time"
 )
 
 //状态监控使用udp来通信
 func startStatusServer() {
-	//如果用了域名方便解析
+	//为了在使用hostname的情况下也可以正常运行
 	addr, err := net.ResolveUDPAddr("udp", "localhost:10086")
 	checkError(err)
 	conn, err := net.ListenUDP("udp", addr)
@@ -26,21 +23,23 @@ func startStatusServer() {
 	}
 }
 
+// func printUDPMessage(c *net.UDPConn) {
+// 	buf := make([]byte, 512)
+// 	len, _, err := c.ReadFromUDP(buf)
+// 	checkError(err, "读取出错")
+
+// }
+
 //处理UDP数据
 func recvUDPMessage(conn *net.UDPConn) {
-	log.Println("接收到UDP数据包")
 	buf := make([]byte, 1024)
+	//如果没有数据包传来，线程会在这里阻塞
 	n, remoteAddr, err := conn.ReadFromUDP(buf)
 	checkError(err, "处理UDP数据包")
-	timeNow := time.Now().Unix()
-	fmt.Println("接受到UDP数据包:", n, remoteAddr)
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, uint32(timeNow))
+
+	log.Println("接受到UDP数据包:", n, remoteAddr)
+	log.Printf("Received data: %s", string(buf[:len(buf)]))
+	b := []byte("收到")
 	conn.WriteToUDP(b, remoteAddr)
-	for {
-		buf := make([]byte, 512)
-		len, err := conn.Read(buf)
-		checkError(err, "读取出错")
-		fmt.Printf("Received data: %v", string(buf[:len]))
-	}
+	//开启一个线程处理
 }
