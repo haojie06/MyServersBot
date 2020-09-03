@@ -22,6 +22,8 @@ func main() {
 	}
 
 	registerCommandHandler(bot)
+	//开启状态监控服务器
+	go startStatusServer()
 	log.Println("MyServersBot started...")
 	bot.Start()
 }
