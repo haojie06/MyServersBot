@@ -22,3 +22,10 @@ func sendAutoDeleteMsg(bot *tb.Bot, recv *tb.User, msg string, dur time.Duration
 		bot.Delete(m)
 	}()
 }
+
+// bot.Delete(idConversionMap[m.Sender.ID].HistoryMsg["askConfirmPassword"])
+// delete(idConversionMap[m.Sender.ID].HistoryMsg, "askConfirmPassword")
+func deleteHistoryMsg(bot *tb.Bot, historyMsg map[string]*tb.Message, key string) {
+	bot.Delete(historyMsg[key])
+	delete(historyMsg, key)
+}

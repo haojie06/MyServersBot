@@ -1,3 +1,4 @@
-adminpassword: "123456"
+adminpassword: ""
+connectpassword: ""
 listenport: 10086
 token: 1343712816:AAFLRDa4DYZ_ryHMEF5vJrlO-gHsHxf68GA
