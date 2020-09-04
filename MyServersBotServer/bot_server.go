@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -35,11 +36,23 @@ func main() {
 	db := startDB()
 	initDB(db)
 	defer closeDB(db)
-	registerCommandHandler(bot, db)
+	registerCommandHandler(bot, db, viper.GetViper())
 
 	//开启状态监控服务器
-	go startStatusServer(db)
+	go startStatusServer(db, viper.GetString("listenPort"))
 	go checkServers()
+	logo := `
+ __  __          _____                                     ____          _   
+|  \/  |        / ____|                                   |  _ \        | |  
+| \  / | _   _ | (___    ___  _ __ __   __ ___  _ __  ___ | |_) |  ___  | |_ 
+| |\/| || | | | \___ \  / _ \| '__|\ \ / // _ \| '__|/ __||  _ <  / _ \ | __|
+| |  | || |_| | ____) ||  __/| |    \ V /|  __/| |   \__ \| |_) || (_) || |_ 
+|_|  |_| \__, ||_____/  \___||_|     \_/  \___||_|   |___/|____/  \___/  \__|
+          __/ |                                                              
+         |___/                                                               
+
+	`
+	fmt.Println(logo)
 	log.Println("MyServersBot started...")
 	bot.Start()
 }

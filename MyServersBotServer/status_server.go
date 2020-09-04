@@ -15,9 +15,9 @@ var (
 )
 
 //状态监控使用udp来通信
-func startStatusServer(db *leveldb.DB) {
+func startStatusServer(db *leveldb.DB,lPort string) {
 	//为了在使用hostname的情况下也可以正常运行
-	addr, err := net.ResolveUDPAddr("udp", "localhost:10086")
+	addr, err := net.ResolveUDPAddr("udp", "localhost:" + lPort)
 	checkError(err)
 	conn, err := net.ListenUDP("udp", addr)
 	checkError(err)
@@ -100,7 +100,7 @@ func checkServers() {
 
 		for key, server := range serverMap {
 			// log.Printf("检测服务器在线情况 服务器:%s 活跃时间:%d 现在时间:%d\n", key, server.LastActive.Unix(), time.Now().Unix())
-			if time.Now().Unix()-server.LastActive.Unix() > 10 {
+			if time.Now().Unix()-server.LastActive.Unix() > 10 && server.ServerOnline {
 				log.Println("检测到服务器离线", key)
 				server.ServerOnline = false
 				serverMap[key] = server
