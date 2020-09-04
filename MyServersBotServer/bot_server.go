@@ -24,10 +24,13 @@ func main() {
 	if err := bot.RemoveWebhook(); err != nil {
 		log.Panic(err.Error())
 	}
-
+	//开启数据库
+	db := startDB()
+	defer closeDB(db)
 	registerCommandHandler(bot)
+
 	//开启状态监控服务器
-	go startStatusServer()
+	go startStatusServer(db)
 	go checkServers()
 	log.Println("MyServersBot started...")
 	bot.Start()
