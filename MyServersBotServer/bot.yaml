@@ -1,4 +1,4 @@
-adminpassword: ""
-connectpassword: ""
+adminpassword: 确认设置初始密码为12345吗
+connectpassword: 确认设置连接密码为123吗
 listenport: 10086
 token: 1343712816:AAFLRDa4DYZ_ryHMEF5vJrlO-gHsHxf68GA
