@@ -4,15 +4,22 @@ import (
 	"log"
 	"time"
 
+	"github.com/spf13/viper"
+
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 func main() {
+	//读取配置文件
+	viper.SetConfigFile("./bot.yaml")
+	err := viper.ReadInConfig()
+	checkError(err, "读取配置文件")
+
 	bot, err := tb.NewBot(tb.Settings{
 		// You can also set custom API URL.
 		// If field is empty it equals to "https://api.telegram.org".
 		// URL: "",
-		Token:  "1343712816:AAFLRDa4DYZ_ryHMEF5vJrlO-gHsHxf68GA",
+		Token:  viper.GetString("token"),
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
 
@@ -26,8 +33,9 @@ func main() {
 	}
 	//开启数据库
 	db := startDB()
+	initDB(db)
 	defer closeDB(db)
-	registerCommandHandler(bot)
+	registerCommandHandler(bot, db)
 
 	//开启状态监控服务器
 	go startStatusServer(db)

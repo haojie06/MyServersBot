@@ -42,9 +42,11 @@ func startStatusServer(db *leveldb.DB) {
 	// checkError(err)
 	//读取数据库，获取所有的Servers
 	dbServersJSON, err := db.Get([]byte("servers"), nil)
-	checkError(err, "从数据库中读取")
-	err = json.Unmarshal(dbServersJSON, &serverMap)
-	checkError(err, "反序列化")
+	if err == nil {
+		//没出错的话，这个键值对才存在
+		err = json.Unmarshal(dbServersJSON, &serverMap)
+		checkError(err, "反序列化")
+	}
 	log.Printf("当前记录服务器:%d个", len(serverMap))
 	//循环监听来自客户端的连接
 	for {

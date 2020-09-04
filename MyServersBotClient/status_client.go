@@ -13,15 +13,17 @@ func main() {
 	conn, err := net.Dial("udp", "localhost:10086")
 	defer conn.Close()
 	if err != nil {
+		log.Println("发信错误", err.Error())
 		os.Exit(1)
 	}
-	//持续发送数据包
+	//持续发送数据包,当前不检测服务端是否收到，未来可以考虑加入
 	//JSON的形式传递当前系统信息
 	for {
 		mData, err := json.MarshalIndent(Server{ServerName: "test", ServerIP: "127.0.0.1", ServerOnline: true}, "", " ")
 		if err != nil {
 			log.Panic(err.Error())
 		}
+		conn.Write(mData)
 		conn.Write(mData)
 		log.Println("已更新状态")
 		// msg := make([]byte, 1024)
