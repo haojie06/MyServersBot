@@ -20,6 +20,10 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+	//移除之前的webhook
+	if err := bot.RemoveWebhook(); err != nil {
+		log.Panic(err.Error())
+	}
 
 	registerCommandHandler(bot)
 	//开启状态监控服务器

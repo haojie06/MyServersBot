@@ -52,33 +52,41 @@ func recvUDPMessage(conn *net.UDPConn) {
 	log.Println("接受到UDP数据包:", n, remoteAddr)
 	//重新截取切片，不然反序列化的时候会出错
 	buf = buf[:n]
-	log.Printf("Received data: %s", string(buf[:len(buf)]))
-	b := []byte("收到")
+	// log.Printf("Received data: %s", string(buf[:len(buf)]))
+
 	server := Server{}
 	if err = json.Unmarshal(buf, &server); err != nil {
 		log.Panic(err.Error())
 	}
-	log.Printf("%+v", server)
+	// log.Printf("%+v", server)
 	//更新服务器状态，活跃时间等
-	if _, ok := serverMap[server.ServerName]; ok {
-		editServer := serverMap[server.ServerName]
-		editServer.LastActive = time.Now()
-		serverMap[server.ServerName] = editServer
-		log.Println("更新服务器", serverMap[server.ServerName].LastActive.Unix())
+	//如果服务器上线，发送通知
+	if s, ok := serverMap[server.ServerName]; ok {
+		if s.ServerOnline == false {
+			s.ServerOnline = true
+			log.Println("检测到服务器上线", s.ServerName)
+		}
+		s.LastActive = time.Now()
+		serverMap[server.ServerName] = s
+		// log.Println("更新服务器", serverMap[server.ServerName].LastActive.Unix())
 	}
-
-	conn.WriteToUDP(b, remoteAddr)
+	//如果需要向客户端发送信息
+	// b := []byte("收到")
+	// conn.WriteToUDP(b, remoteAddr)
 	//开启一个线程处理
 }
 
 //检查服务器状态，定期检查服务器状态，如果太久没接收到信息，服务器状态改为离线。
 //数据包5s一个，如果上次活跃时间是10s之前判定为离线
+//如果离线过久发送警报 如离线60s以上。
 func checkServers() {
 	for {
-		log.Println("检测服务器在线情况")
 		for key, server := range serverMap {
-			if time.Now().Unix()-server.LastActive.Unix() > 1000 {
+			log.Printf("检测服务器在线情况 服务器:%s 活跃时间:%d 现在时间:%d\n", key, server.LastActive.Unix(), time.Now().Unix())
+			if time.Now().Unix()-server.LastActive.Unix() > 10 {
 				log.Println("检测到服务器离线", key)
+				server.ServerOnline = false
+				serverMap[key] = server
 			}
 		}
 		//10s检测一次
