@@ -65,7 +65,8 @@ func initDB(db *leveldb.DB) {
 	}
 
 }
-
+//添加订阅
+// func addSubscriber()
 //添加管理
 func addAdmin(db *leveldb.DB, id int) {
 	mAdmin, err := db.Get([]byte("admin"), nil)
