@@ -4,6 +4,8 @@ package main
 import (
 	"github.com/spf13/viper"
 
+	"time"
+
 	"github.com/syndtr/goleveldb/leveldb"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -48,6 +50,12 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 			}
 			// sendAutoDeleteMsg(bot, msg.Sender, "这是机器人首次运行，请设置管理密码(用于管理机器人和服务器)，与连接密码(客户端连接服务器时使用)", 15*time.Second)
 		}
+	})
+
+	//处理订阅命令
+	bot.Handle("/subscribe", func(msg *tb.Message) {
+		addSubscriber(db, msg.Sender)
+		sendAutoDeleteMsg(bot, msg.Sender, "你已经成功订阅通知", 5*time.Second)
 	})
 
 	//处理用户输入的任何文本
