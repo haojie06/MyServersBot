@@ -75,24 +75,26 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 					inlineMenu.Row(btnConfirm, btnCancel),
 				)
 				m, _ := bot.Send(msg.Sender, "确认设置初始密码为"+msg.Text+"吗", inlineMenu)
+				v.Set("adminPassword", msg.Text)
 				idConversionMap[msg.Sender.ID].HistoryMsg["askConfirmPasswordMsg"] = m
 				bot.Handle(&btnCancel, func(c *tb.Callback) {
 					sendAutoDeleteMsg(bot, c.Sender, "请重新输入初始密码", 10*time.Second)
 					bot.Respond(c, &tb.CallbackResponse{})
 				})
+				//确认按钮
 				bot.Handle(&btnConfirm, func(c *tb.Callback) {
 					//设置管理密码
-					v.Set("adminPassword", m.Text)
 					v.WriteConfig()
 					//确定添加后，删除之前的提示信息
-					// bot.Delete(idConversionMap[msg.Sender.ID].HistoryMsg["askConfirmPassword"])
-					// delete(idConversionMap[msg.Sender.ID].HistoryMsg, "askConfirmPassword")
-					deleteHistoryMsg(bot, idConversionMap[msg.Sender.ID].HistoryMsg, "askConfirmPasswordMsg")
-					deleteHistoryMsg(bot, idConversionMap[msg.Sender.ID].HistoryMsg, "askAdminPasswordMsg")
+
+					deleteHistoryMsg(bot, idConversionMap[c.Sender.ID].HistoryMsg, "askConfirmPasswordMsg")
+					deleteHistoryMsg(bot, idConversionMap[c.Sender.ID].HistoryMsg, "askAdminPasswordMsg")
 					sendAutoDeleteMsg(bot, c.Sender, "成功设置管理密码，之后也可以在配置文件bot.yaml中修改", 10*time.Second)
-					m, _ = bot.Send(msg.Sender, "接着，请输入客户端连接密码")
-					idConversionMap[msg.Sender.ID].CurConversion = "askConnectPassword"
-					idConversionMap[msg.Sender.ID].HistoryMsg["askConnectPasswordMsg"] = m
+					//把该用户加到管理员中
+					addAdmin(db, c.Sender.ID)
+					m, _ = bot.Send(c.Sender, "接着，请输入客户端连接密码")
+					idConversionMap[c.Sender.ID].CurConversion = "askConnectPassword"
+					idConversionMap[c.Sender.ID].HistoryMsg["askConnectPasswordMsg"] = m
 					bot.Respond(c, &tb.CallbackResponse{})
 				})
 			}
@@ -112,13 +114,12 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 
 				bot.Handle(&btnConfirm, func(c *tb.Callback) {
 					//设置连接
-					v.Set("connectPassword", m.Text)
+					v.Set("connectPassword", msg.Text)
 					v.WriteConfig()
 					deleteHistoryMsg(bot, idConversionMap[msg.Sender.ID].HistoryMsg, "askConfirmPasswordMsg")
 					deleteHistoryMsg(bot, idConversionMap[msg.Sender.ID].HistoryMsg, "askConnectPasswordMsg")
 					deleteHistoryMsg(bot, idConversionMap[msg.Sender.ID].HistoryMsg, "promptMsg")
 					sendAutoDeleteMsg(bot, c.Sender, "成功设置连接密码，接着添加服务器吧", 10*time.Second)
-
 					bot.Respond(c, &tb.CallbackResponse{})
 				})
 			}

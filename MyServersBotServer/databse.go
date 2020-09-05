@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/syndtr/goleveldb/leveldb"
+	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 func startDB() *leveldb.DB {
@@ -42,6 +44,50 @@ func initDB(db *leveldb.DB) {
 		checkError(err, "写入测试服务器")
 	}
 	//初始化settings，settings还是用外部配置文件算了，因为为了方便用户部署，bot token要方便设置
+	//初始化admin
+	exist, err = db.Has([]byte("admin"), nil)
+	checkError(err, "Key检查")
+	if !exist {
+		admin := make(map[int]bool, 1)
+		mAdmin, err := json.Marshal(admin)
+		checkError(err, "序列化")
+		db.Put([]byte("admin"), mAdmin, nil)
+	}
+	exist, err = db.Has([]byte("subscriber"), nil)
+	checkError(err, "Key检查")
+	//初始化订阅者
+	if !exist {
+		//考虑到splice没有in方法判断元素是否在其中，这里直接使用map了
+		subscriber := make(map[int]*tb.User, 1)
+		mSubscriber, err := json.Marshal(subscriber)
+		checkError(err, "序列化")
+		db.Put([]byte("subscriber"), mSubscriber, nil)
+	}
+
+}
+
+//添加管理
+func addAdmin(db *leveldb.DB, id int) {
+	mAdmin, err := db.Get([]byte("admin"), nil)
+	if err != nil {
+		log.Panic(err.Error())
+	}
+	var adminMap map[int]bool
+	err = json.Unmarshal(mAdmin, &adminMap)
+	if err != nil {
+		log.Panic("反序列化错误", err.Error())
+	}
+	if _, exist := adminMap[id]; !exist {
+		log.Print("管理员还未添加，添加管理员")
+		adminMap[id] = true
+		mAdmin, _ := json.Marshal(adminMap)
+		err := db.Put([]byte("admin"), mAdmin, nil)
+		if err == nil {
+			log.Println("添加管理员成功")
+		}
+	} else {
+		log.Print("管理员已经存在，不重复添加了")
+	}
 }
 
 func closeDB(db *leveldb.DB) {
