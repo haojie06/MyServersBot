@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/syndtr/goleveldb/leveldb"
+	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 //
@@ -15,9 +16,9 @@ var (
 )
 
 //状态监控使用udp来通信
-func startStatusServer(db *leveldb.DB,lPort string) {
+func startStatusServer(db *leveldb.DB, bot *tb.Bot, lPort string) {
 	//为了在使用hostname的情况下也可以正常运行
-	addr, err := net.ResolveUDPAddr("udp", "localhost:" + lPort)
+	addr, err := net.ResolveUDPAddr("udp", "localhost:"+lPort)
 	checkError(err)
 	conn, err := net.ListenUDP("udp", addr)
 	checkError(err)
@@ -50,14 +51,14 @@ func startStatusServer(db *leveldb.DB,lPort string) {
 	log.Printf("当前记录服务器:%d个", len(serverMap))
 	//循环监听来自客户端的连接
 	for {
-		recvUDPMessage(conn)
+		recvUDPMessage(conn, bot, db)
 	}
 }
 
 //处理UDP数据
 //超时未连接的服务器状态要改成离线
 //需要维护一个服务器结构体数组
-func recvUDPMessage(conn *net.UDPConn) {
+func recvUDPMessage(conn *net.UDPConn, bot *tb.Bot, db *leveldb.DB) {
 	buf := make([]byte, 1024)
 	//如果没有数据包传来，线程会在这里阻塞
 	n, remoteAddr, err := conn.ReadFromUDP(buf)
@@ -80,6 +81,8 @@ func recvUDPMessage(conn *net.UDPConn) {
 			if s.ServerOnline == false {
 				s.ServerOnline = true
 				log.Println("检测到服务器上线", s.ServerName)
+				go infoPush(bot, db, "检测到服务器上线"+s.ServerName)
+				//消息推送测试
 			}
 			s.LastActive = time.Now()
 			serverMap[server.ServerName] = s
@@ -95,18 +98,31 @@ func recvUDPMessage(conn *net.UDPConn) {
 //检查服务器状态，定期检查服务器状态，如果太久没接收到信息，服务器状态改为离线。
 //数据包5s一个，如果上次活跃时间是10s之前判定为离线
 //如果离线过久发送警报 如离线60s以上。
-func checkServers() {
+func checkServers(db *leveldb.DB, bot *tb.Bot) {
 	for {
 
 		for key, server := range serverMap {
 			// log.Printf("检测服务器在线情况 服务器:%s 活跃时间:%d 现在时间:%d\n", key, server.LastActive.Unix(), time.Now().Unix())
 			if time.Now().Unix()-server.LastActive.Unix() > 10 && server.ServerOnline {
 				log.Println("检测到服务器离线", key)
+				go infoPush(bot, db, "检测到服务器离线"+key)
 				server.ServerOnline = false
 				serverMap[key] = server
 			}
 		}
 		//10s检测一次
 		time.Sleep(10 * time.Second)
+	}
+}
+
+//消息推送，获取数据库中的订阅者列表，然后推送消息 目前只是用于测试
+func infoPush(bot *tb.Bot, db *leveldb.DB, msg string) {
+	mSubscriberMap, err := db.Get([]byte("subscriber"), nil)
+	checkError(err)
+	subscriberMap := make(map[int]*tb.User)
+	err = json.Unmarshal(mSubscriberMap, &subscriberMap)
+	checkError(err)
+	for _, user := range subscriberMap {
+		bot.Send(user, msg)
 	}
 }

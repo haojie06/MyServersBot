@@ -54,8 +54,12 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 
 	//处理订阅命令
 	bot.Handle("/subscribe", func(msg *tb.Message) {
-		addSubscriber(db, msg.Sender)
+		editSubscriber(db, msg.Sender, true)
 		sendAutoDeleteMsg(bot, msg.Sender, "你已经成功订阅通知", 5*time.Second)
+	})
+	bot.Handle("/unsubscribe", func(msg *tb.Message) {
+		editSubscriber(db, msg.Sender, false)
+		sendAutoDeleteMsg(bot, msg.Sender, "你已经成功退订通知", 5*time.Second)
 	})
 
 	//处理用户输入的任何文本
@@ -94,7 +98,7 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 					deleteHistoryMsg(bot, idConversionMap[c.Sender.ID].HistoryMsg, "askAdminPasswordMsg")
 					//把该用户加到管理员中
 					addAdmin(db, c.Sender.ID)
-					addSubscriber(db, c.Sender)
+					editSubscriber(db, c.Sender, true)
 					m, _ = bot.Send(c.Sender, "接着，请输入客户端连接密码")
 					idConversionMap[c.Sender.ID].CurConversion = "askConnectPassword"
 					idConversionMap[c.Sender.ID].HistoryMsg["askConnectPasswordMsg"] = m

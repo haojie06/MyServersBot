@@ -67,7 +67,7 @@ func initDB(db *leveldb.DB) {
 }
 
 //添加订阅
-func addSubscriber(db *leveldb.DB, user *tb.User) {
+func editSubscriber(db *leveldb.DB, user *tb.User, add bool) {
 	mSubscriber, err := db.Get([]byte("subscriber"), nil)
 	if err != nil {
 		log.Panic(err.Error())
@@ -77,12 +77,17 @@ func addSubscriber(db *leveldb.DB, user *tb.User) {
 	if err != nil {
 		log.Panic("反序列化错误", err.Error())
 	}
-	subscriberMap[user.ID] = user
+	if add {
+		subscriberMap[user.ID] = user
+	} else {
+		//移除订阅
+		delete(subscriberMap, user.ID)
+	}
 	mSubscriber, err = json.Marshal(subscriberMap)
 	checkError(err)
 	err = db.Put([]byte("subscriber"), mSubscriber, nil)
 	if err == nil {
-		log.Println("添加订阅成功，用户:", user.Username)
+		log.Println("修改订阅成功，用户:", user.Username, "模式", add)
 	} else {
 		log.Panic(err.Error())
 	}

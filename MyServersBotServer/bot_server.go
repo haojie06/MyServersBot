@@ -39,8 +39,8 @@ func main() {
 	registerCommandHandler(bot, db, viper.GetViper())
 
 	//开启状态监控服务器
-	go startStatusServer(db, viper.GetString("listenPort"))
-	go checkServers()
+	go startStatusServer(db, bot, viper.GetString("listenPort"))
+	go checkServers(db, bot)
 	logo := `
  __  __          _____                                     ____          _   
 |  \/  |        / ____|                                   |  _ \        | |  
