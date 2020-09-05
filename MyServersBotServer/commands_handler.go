@@ -86,6 +86,7 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 					deleteHistoryMsg(bot, idConversionMap[c.Sender.ID].HistoryMsg, "askAdminPasswordMsg")
 					//把该用户加到管理员中
 					addAdmin(db, c.Sender.ID)
+					addSubscriber(db, c.Sender)
 					m, _ = bot.Send(c.Sender, "接着，请输入客户端连接密码")
 					idConversionMap[c.Sender.ID].CurConversion = "askConnectPassword"
 					idConversionMap[c.Sender.ID].HistoryMsg["askConnectPasswordMsg"] = m

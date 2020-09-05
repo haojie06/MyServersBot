@@ -65,8 +65,29 @@ func initDB(db *leveldb.DB) {
 	}
 
 }
+
 //添加订阅
-// func addSubscriber()
+func addSubscriber(db *leveldb.DB, user *tb.User) {
+	mSubscriber, err := db.Get([]byte("subscriber"), nil)
+	if err != nil {
+		log.Panic(err.Error())
+	}
+	var subscriberMap map[int]*tb.User
+	err = json.Unmarshal(mSubscriber, &subscriberMap)
+	if err != nil {
+		log.Panic("反序列化错误", err.Error())
+	}
+	subscriberMap[user.ID] = user
+	mSubscriber, err = json.Marshal(subscriberMap)
+	checkError(err)
+	err = db.Put([]byte("subscriber"), mSubscriber, nil)
+	if err == nil {
+		log.Println("添加订阅成功，用户:", user.Username)
+	} else {
+		log.Panic(err.Error())
+	}
+}
+
 //添加管理
 func addAdmin(db *leveldb.DB, id int) {
 	mAdmin, err := db.Get([]byte("admin"), nil)
@@ -85,6 +106,8 @@ func addAdmin(db *leveldb.DB, id int) {
 		err := db.Put([]byte("admin"), mAdmin, nil)
 		if err == nil {
 			log.Println("添加管理员成功")
+		} else {
+			log.Panic(err.Error())
 		}
 	} else {
 		log.Print("管理员已经存在，不重复添加了")
