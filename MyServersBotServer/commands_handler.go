@@ -2,9 +2,10 @@ package main
 
 //机器人命令处理
 import (
-	"github.com/spf13/viper"
-
+	"log"
 	"time"
+
+	"github.com/spf13/viper"
 
 	"github.com/syndtr/goleveldb/leveldb"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -74,29 +75,11 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 		idConversationMap[msg.Sender.ID].CurAddServerStep = "设置服务器名称"
 		showAddServerForm(bot, db, msg.Sender, idConversationMap)
 		bot.Delete(msg)
-		// var (
-		// 	inlineMenu = &tb.ReplyMarkup{}
-		// 	btnConfirm = inlineMenu.Data("确认", "confirmAddServer", "")
-		// 	btnCancel  = inlineMenu.Data("取消", "cancelAddServer", "")
-		// )
-		// inlineMenu.Inline(
-		// 	inlineMenu.Row(btnConfirm, btnCancel),
-		// )
-		// m, _ := bot.Send(msg.Sender, "确定要添加服务器:"+msg.Payload+"吗?", inlineMenu)
-		// // idConversationMap[msg.Sender.ID].HistoryMsg["askAddServerMsg"] = m
-		// //取消添加服务器
-		// bot.Handle(&btnCancel, func(c *tb.Callback) {
-		// 	bot.Respond(c, &tb.CallbackResponse{
-		// 		Text: "请重新输入服务器名字",
-		// 	})
-		// 	// deleteHistoryMsg(bot, idConversationMap[msg.Sender.ID].HistoryMsg, "askAddServerMsg")
-		// 	bot.Delete(m)
-		// })
-
 	})
 
 	//处理用户输入的任何文本
 	bot.Handle(tb.OnText, func(msg *tb.Message) {
+		checkIfMapNil(msg.Sender.ID, idConversationMap)
 		idConversationMap[msg.Sender.ID].HistoryMsg["userSendMsg"] = msg
 		switch idConversationMap[msg.Sender.ID].CurConversation {
 		case "askAdminPassword":
@@ -230,6 +213,7 @@ func showAddServerForm(bot *tb.Bot, db *leveldb.DB, user *tb.User, idConversatio
 		m, _ := bot.Edit(fMsg, showForm, inlineMenu)
 		idConversationMap[user.ID].HistoryMsg["showFormMsg"] = m
 	} else {
+		log.Println("新增信息")
 		m, _ := bot.Send(user, showForm, inlineMenu)
 		idConversationMap[user.ID].HistoryMsg["showFormMsg"] = m
 	}
@@ -244,6 +228,33 @@ func showAddServerForm(bot *tb.Bot, db *leveldb.DB, user *tb.User, idConversatio
 		bot.Delete(idConversationMap[user.ID].HistoryMsg["showFormMsg"])
 		delete(idConversationMap[user.ID].HistoryMsg, "showFormMsg")
 
+	})
+
+	bot.Handle(&btnSetName, func(c *tb.Callback) {
+		idConversationMap[user.ID].CurAddServerStep = "设置服务器名称"
+		idConversationMap[user.ID].AddServer.ServerName = ""
+		showAddServerForm(bot, db, user, idConversationMap)
+		bot.Respond(c, &tb.CallbackResponse{
+			Text: "请重新输入服务器名称",
+		})
+	})
+
+	bot.Handle(&btnSetDescription, func(c *tb.Callback) {
+		idConversationMap[user.ID].CurAddServerStep = "设置服务器简介"
+		idConversationMap[user.ID].AddServer.ServerDescription = ""
+		showAddServerForm(bot, db, user, idConversationMap)
+		bot.Respond(c, &tb.CallbackResponse{
+			Text: "请重新输入服务器简介",
+		})
+	})
+
+	bot.Handle(&btnSetLocation, func(c *tb.Callback) {
+		idConversationMap[user.ID].CurAddServerStep = "设置服务器地点"
+		idConversationMap[user.ID].AddServer.ServerLocation = ""
+		showAddServerForm(bot, db, user, idConversationMap)
+		bot.Respond(c, &tb.CallbackResponse{
+			Text: "请重新输入服务器地点",
+		})
 	})
 
 }
