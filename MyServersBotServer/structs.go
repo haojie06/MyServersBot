@@ -17,16 +17,18 @@ type Setting struct {
 	Password string `json:"password"`
 }
 
-//保存每个用户的会话，存在一个id——Conversion map里面
-type Conversion struct {
+//保存每个用户的会话，存在一个id——Conversation map里面
+type Conversation struct {
 	//历史对话map，用于删除过时消息
 	HistoryMsg map[string]*tb.Message
 	//当前对话进度，用于填写表单等持续回话，配合switch case使用
-	CurConversion string
+	CurConversation string
+	//当前对话添加服务器表单的阶段
+	CurAddServerStep string
 	//权限 visitor admin
 	Permission string
 	//一个表单，用于记录将要添加的服务器
-	AddServer AddServerForm
+	AddServer *AddServerForm
 }
 
 //要添加到数据库中的服务器
