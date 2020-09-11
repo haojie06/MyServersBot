@@ -9,6 +9,8 @@ import (
 type Server struct {
 	ServerName   string    `json:"server_name"`
 	ServerIP     string    `json:"server_ip"`
+	ServerDescription string `json:"server_description"`
+	ServerLocation string `json:"server_location"`
 	ServerOnline bool      `json:"server_online"`
 	LastActive   time.Time `json:"last_active"`
 }
