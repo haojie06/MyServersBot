@@ -2,6 +2,7 @@ package main
 
 //机器人命令处理
 import (
+	"encoding/json"
 	"log"
 	"time"
 
@@ -164,6 +165,7 @@ func registerCommandHandler(bot *tb.Bot, db *leveldb.DB, v *viper.Viper) {
 				switch idConversationMap[msg.Sender.ID].CurAddServerStep {
 				case "设置服务器名称":
 					{
+						bot.Delete(idConversationMap[msg.Sender.ID].HistoryMsg["askAddServerMsg"])
 						idConversationMap[msg.Sender.ID].AddServer.ServerName = msg.Text
 						idConversationMap[msg.Sender.ID].CurAddServerStep = "设置服务器简介"
 						showAddServerForm(bot, db, msg.Sender, idConversationMap)
@@ -213,7 +215,6 @@ func showAddServerForm(bot *tb.Bot, db *leveldb.DB, user *tb.User, idConversatio
 		m, _ := bot.Edit(fMsg, showForm, inlineMenu)
 		idConversationMap[user.ID].HistoryMsg["showFormMsg"] = m
 	} else {
-		log.Println("新增信息")
 		m, _ := bot.Send(user, showForm, inlineMenu)
 		idConversationMap[user.ID].HistoryMsg["showFormMsg"] = m
 	}
@@ -227,9 +228,7 @@ func showAddServerForm(bot *tb.Bot, db *leveldb.DB, user *tb.User, idConversatio
 		idConversationMap[user.ID].AddServer = &AddServerForm{}
 		bot.Delete(idConversationMap[user.ID].HistoryMsg["showFormMsg"])
 		delete(idConversationMap[user.ID].HistoryMsg, "showFormMsg")
-
 	})
-
 	bot.Handle(&btnSetName, func(c *tb.Callback) {
 		idConversationMap[user.ID].CurAddServerStep = "设置服务器名称"
 		idConversationMap[user.ID].AddServer.ServerName = ""
@@ -245,6 +244,44 @@ func showAddServerForm(bot *tb.Bot, db *leveldb.DB, user *tb.User, idConversatio
 		showAddServerForm(bot, db, user, idConversationMap)
 		bot.Respond(c, &tb.CallbackResponse{
 			Text: "请重新输入服务器简介",
+		})
+	})
+	//确定提交表单
+	bot.Handle(&btnConfirm, func(c *tb.Callback) {
+		//先获取数据库中的服务器列表，查看是否重名
+		mServers, err := db.Get([]byte("servers"), nil)
+		if err != nil {
+			log.Panic(err.Error())
+		}
+		var serverMap map[string]Server
+		err = json.Unmarshal(mServers, &serverMap)
+		if err != nil {
+			log.Panic(err.Error())
+		}
+		serverName := idConversationMap[c.Sender.ID].AddServer.ServerName
+		if _, exist := serverMap[serverName]; !exist {
+			log.Println("确认添加服务器" + serverName)
+			mServers, _ = json.Marshal(serverMap)
+			db.Put([]byte(serverName), mServers, nil)
+			bot.Respond(c, &tb.CallbackResponse{
+				Text: "已成功添加",
+			})
+			bot.Delete(idConversationMap[c.Sender.ID].HistoryMsg["showFormMsg"])
+		} else {
+			log.Println("添加服务器失败，已有重名服务器" + serverName)
+			bot.Respond(c, &tb.CallbackResponse{
+				Text: "添加服务器失败，已有重名服务器",
+			})
+			bot.Delete(idConversationMap[c.Sender.ID].HistoryMsg["showFormMsg"])
+			idConversationMap[c.Sender.ID].AddServer = &AddServerForm{}
+		}
+	})
+
+	bot.Handle(&btnCancel, func(c *tb.Callback) {
+		bot.Delete(idConversationMap[c.Sender.ID].HistoryMsg["showFormMsg"])
+		idConversationMap[c.Sender.ID].AddServer = &AddServerForm{}
+		bot.Respond(c, &tb.CallbackResponse{
+			Text: "取消添加",
 		})
 	})
 
